@@ -442,6 +442,7 @@ public class NotificationRuleResourceTest extends ResourceTest {
                             "publisherClass": "org.dependencytrack.notification.publisher.SendMailPublisher",
                             "templateMimeType": "templateMimeType",
                             "defaultPublisher": false,
+                            "publishScheduled": false,
                             "uuid": "${json-unit.matches:publisherUuid}"
                           },
                           "uuid": "${json-unit.matches:ruleUuid}"

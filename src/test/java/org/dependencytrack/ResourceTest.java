@@ -35,6 +35,9 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
@@ -61,6 +64,7 @@ public abstract class ResourceTest extends JerseyTest {
     protected final String V1_METRICS = "/v1/metrics";
     protected final String V1_NOTIFICATION_PUBLISHER = "/v1/notification/publisher";
     protected final String V1_NOTIFICATION_RULE = "/v1/notification/rule";
+    protected final String V1_SCHEDULED_NOTIFICATION_RULE = "/v1/schedulednotification/rule";
     protected final String V1_OIDC = "/v1/oidc";
     protected final String V1_PERMISSION = "/v1/permission";
     protected final String V1_OSV_ECOSYSTEM = "/v1/integration/osv/ecosystem";
@@ -92,6 +96,14 @@ public abstract class ResourceTest extends JerseyTest {
     protected String jwt;
     protected Team team;
     protected String apiKey;
+    protected JsonMapper jsonMapper;
+
+    public ResourceTest() {
+        // needed to deserialize Java time objects in tests
+        jsonMapper = JsonMapper.builder()
+            .addModule(new JavaTimeModule())
+            .build();
+    }
 
     @BeforeClass
     public static void init() {

@@ -32,7 +32,6 @@ import org.dependencytrack.notification.publisher.DefaultNotificationPublishers;
 import org.dependencytrack.notification.publisher.Publisher;
 import org.dependencytrack.notification.publisher.SendMailPublisher;
 import org.dependencytrack.persistence.DefaultObjectGenerator;
-import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.test.DeploymentContext;

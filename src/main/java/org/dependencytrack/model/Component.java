@@ -27,12 +27,17 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.github.packageurl.MalformedPackageURLException;
 import com.github.packageurl.PackageURL;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.apache.commons.lang3.StringUtils;
 import org.dependencytrack.model.validation.ValidSpdxExpression;
 import org.dependencytrack.persistence.converter.OrganizationalEntityJsonConverter;
 import org.dependencytrack.resources.v1.serializers.CustomPackageURLSerializer;
 
+import jakarta.json.JsonObject;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import javax.jdo.annotations.Column;
 import javax.jdo.annotations.Convert;
 import javax.jdo.annotations.Element;
@@ -48,11 +53,6 @@ import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
 import javax.jdo.annotations.Serialized;
 import javax.jdo.annotations.Unique;
-import javax.json.JsonObject;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -253,7 +253,7 @@ public class Component implements Serializable {
     @Size(max = 786)
     @com.github.packageurl.validator.PackageURL
     @JsonDeserialize(using = TrimmedStringDeserializer.class)
-    @ApiModelProperty(dataType = "string")
+    @Schema(type = "string")
     private String purl;
 
     @Persistent(defaultFetchGroup = "true")
@@ -587,7 +587,7 @@ public class Component implements Serializable {
     }
 
     @JsonSerialize(using = CustomPackageURLSerializer.class)
-    @ApiModelProperty(dataType = "string", accessMode = ApiModelProperty.AccessMode.READ_ONLY)
+    @Schema(type = "string", accessMode = Schema.AccessMode.READ_ONLY)
     public PackageURL getPurlCoordinates() {
         if (purlCoordinates == null) {
             return null;
@@ -785,7 +785,7 @@ public class Component implements Serializable {
     }
 
     @JsonIgnore
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     public boolean isNew() {
         return isNew;
     }
@@ -804,7 +804,7 @@ public class Component implements Serializable {
     }
 
     @JsonIgnore
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     public String getBomRef() {
         return bomRef;
     }
@@ -815,7 +815,7 @@ public class Component implements Serializable {
     }
 
     @JsonIgnore
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     public List<org.cyclonedx.model.License> getLicenseCandidates() {
         return licenseCandidates;
     }
@@ -826,7 +826,7 @@ public class Component implements Serializable {
     }
 
     @JsonIgnore
-    @ApiModelProperty(hidden = true)
+    @Schema(hidden = true)
     public JsonObject getCacheResult() {
         return cacheResult;
     }

@@ -31,10 +31,14 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.github.packageurl.MalformedPackageURLException;
 import com.github.packageurl.PackageURL;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import org.dependencytrack.persistence.converter.OrganizationalEntityJsonConverter;
 import org.dependencytrack.resources.v1.serializers.CustomPackageURLSerializer;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import javax.jdo.annotations.Column;
 import javax.jdo.annotations.Convert;
 import javax.jdo.annotations.Element;
@@ -50,10 +54,6 @@ import javax.jdo.annotations.Persistent;
 import javax.jdo.annotations.PrimaryKey;
 import javax.jdo.annotations.Serialized;
 import javax.jdo.annotations.Unique;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-import javax.validation.constraints.Size;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -199,7 +199,7 @@ public class Project implements Serializable {
     @Size(max = 786)
     @com.github.packageurl.validator.PackageURL
     @JsonDeserialize(using = TrimmedStringDeserializer.class)
-    @ApiModelProperty(dataType = "string")
+    @Schema(type = "string")
     private String purl;
 
     @Persistent
@@ -244,6 +244,7 @@ public class Project implements Serializable {
     @Persistent
     @Index(name = "PROJECT_LASTBOMIMPORT_IDX")
     @Column(name = "LAST_BOM_IMPORTED")
+    @Schema(type = "integer", format = "int64", requiredMode = Schema.RequiredMode.REQUIRED, description = "UNIX epoch timestamp in milliseconds")
     private Date lastBomImport;
 
     /**
@@ -280,7 +281,7 @@ public class Project implements Serializable {
     private List<ExternalReference> externalReferences;
 
     @Persistent(mappedBy = "project")
-    @ApiModelProperty(accessMode = ApiModelProperty.AccessMode.READ_ONLY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private ProjectMetadata metadata;
 
     private transient String bomRef;

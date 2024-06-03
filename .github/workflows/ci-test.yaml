@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'master'          # Default branch
+      - 'feature-**'      # Feature branches
       - '[0-9]+.[0-9]+.x' # Release branches
     paths-ignore:
       - '**/*.md'
@@ -11,6 +12,7 @@ on:
   pull_request:
     branches:
       - 'master'          # Default branch
+      - 'feature-**'      # Feature branches
       - '[0-9]+.[0-9]+.x' # Release branches
     paths-ignore:
       - '**/*.md'
@@ -31,19 +33,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@1d96c772d19495a3b5c517cd2bc0cb401ea0529f # tag=v4.1.3
+        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # tag=v4.1.6
 
       - name: Set up JDK
         uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9 # tag=v4.2.1
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
           cache: 'maven'
 
       - name: Execute unit tests
         run: |-
-          mvn clean
-          mvn test -P enhance
+          mvn -B --no-transfer-progress clean
+          mvn -B --no-transfer-progress test -P enhance
 
       # Publishing coverage to Codacy is only possible for builds of push events.
       # PRs from forks do not get access to repository secrets.
@@ -64,7 +66,7 @@ jobs:
 
       - name: Upload PR test coverage report
         if: ${{ github.event_name == 'pull_request' }}
-        uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # tag=v4.3.2
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # tag=v4.3.3
         with:
           name: pr-test-coverage-report
           path: |-

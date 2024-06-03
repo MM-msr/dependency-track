@@ -18,13 +18,15 @@
  */
 package org.dependencytrack.event;
 
+import alpine.Config;
 import alpine.common.logging.Logger;
 import alpine.event.LdapSyncEvent;
 import alpine.event.framework.EventService;
 import alpine.event.framework.SingleThreadedEventService;
 import alpine.server.tasks.LdapSyncTask;
 import org.dependencytrack.RequirementsVerifier;
-import org.dependencytrack.tasks.BomUploadProcessingTaskV2;
+import org.dependencytrack.common.ConfigKey;
+import org.dependencytrack.tasks.BomUploadProcessingTask;
 import org.dependencytrack.tasks.CallbackTask;
 import org.dependencytrack.tasks.ClearComponentAnalysisCacheTask;
 import org.dependencytrack.tasks.CloneProjectTask;
@@ -55,8 +57,9 @@ import org.dependencytrack.tasks.scanners.SnykAnalysisTask;
 import org.dependencytrack.tasks.scanners.TrivyAnalysisTask;
 import org.dependencytrack.tasks.scanners.VulnDbAnalysisTask;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
+import jakarta.servlet.ServletContextEvent;
+import jakarta.servlet.ServletContextListener;
+import java.time.Duration;
 
 /**
  * Initializes the event subsystem and configures event subscribers.
@@ -74,6 +77,9 @@ public class EventSubsystemInitializer implements ServletContextListener {
     // Starts the SingleThreadedEventService
     private static final SingleThreadedEventService EVENT_SERVICE_ST = SingleThreadedEventService.getInstance();
 
+    private static final Duration DRAIN_TIMEOUT_DURATION =
+            Duration.parse(Config.getInstance().getProperty(ConfigKey.ALPINE_WORKER_POOL_DRAIN_TIMEOUT_DURATION));
+
     /**
      * {@inheritDoc}
      */
@@ -85,7 +91,7 @@ public class EventSubsystemInitializer implements ServletContextListener {
             return;
         }
 
-        EVENT_SERVICE.subscribe(BomUploadEvent.class, BomUploadProcessingTaskV2.class);
+        EVENT_SERVICE.subscribe(BomUploadEvent.class, BomUploadProcessingTask.class);
         EVENT_SERVICE.subscribe(VexUploadEvent.class, VexUploadProcessingTask.class);
         EVENT_SERVICE.subscribe(LdapSyncEvent.class, LdapSyncTask.class);
         EVENT_SERVICE.subscribe(InternalAnalysisEvent.class, InternalAnalysisTask.class);
@@ -129,8 +135,7 @@ public class EventSubsystemInitializer implements ServletContextListener {
         LOGGER.info("Shutting down asynchronous event subsystem");
         TaskScheduler.getInstance().shutdown();
 
-
-        EVENT_SERVICE.unsubscribe(BomUploadProcessingTaskV2.class);
+        EVENT_SERVICE.unsubscribe(BomUploadProcessingTask.class);
         EVENT_SERVICE.unsubscribe(VexUploadProcessingTask.class);
         EVENT_SERVICE.unsubscribe(LdapSyncTask.class);
         EVENT_SERVICE.unsubscribe(InternalAnalysisTask.class);
@@ -158,9 +163,9 @@ public class EventSubsystemInitializer implements ServletContextListener {
         EVENT_SERVICE.unsubscribe(NistMirrorTask.class);
         EVENT_SERVICE.unsubscribe(NistApiMirrorTask.class);
         EVENT_SERVICE.unsubscribe(EpssMirrorTask.class);
-        EVENT_SERVICE.shutdown();
+        EVENT_SERVICE.shutdown(DRAIN_TIMEOUT_DURATION);
 
         EVENT_SERVICE_ST.unsubscribe(IndexTask.class);
-        EVENT_SERVICE_ST.shutdown();
+        EVENT_SERVICE_ST.shutdown(DRAIN_TIMEOUT_DURATION);
     }
 }

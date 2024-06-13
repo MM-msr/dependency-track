@@ -18,7 +18,6 @@
  */
 package org.dependencytrack.resources.v1;
 
-import alpine.common.logging.Logger;
 import alpine.model.Team;
 import alpine.persistence.PaginatedResult;
 import alpine.server.auth.PermissionRequired;
@@ -63,8 +62,6 @@ import java.util.List;
 @Path("/v1/notification/rule")
 @Api(value = "notification", authorizations = @Authorization(value = "X-Api-Key"))
 public class NotificationRuleResource extends AlpineResource {
-
-    private static final Logger LOGGER = Logger.getLogger(NotificationRuleResource.class);
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

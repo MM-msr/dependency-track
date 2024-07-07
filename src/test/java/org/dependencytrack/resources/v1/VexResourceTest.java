@@ -21,6 +21,7 @@ package org.dependencytrack.resources.v1;
 import alpine.server.filters.ApiFilter;
 import alpine.server.filters.AuthenticationFilter;
 import com.fasterxml.jackson.core.StreamReadConstraints;
+import org.dependencytrack.JerseyTestRule;
 import org.dependencytrack.ResourceTest;
 import org.dependencytrack.auth.Permissions;
 import org.dependencytrack.model.AnalysisResponse;
@@ -35,34 +36,29 @@ import org.dependencytrack.resources.v1.exception.JsonMappingExceptionMapper;
 import org.dependencytrack.tasks.scanners.AnalyzerIdentity;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.servlet.ServletContainer;
-import org.glassfish.jersey.test.DeploymentContext;
-import org.glassfish.jersey.test.ServletDeploymentContext;
+import org.junit.ClassRule;
 import org.junit.Test;
 
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.Base64;
 
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatNoException;
-import static org.hamcrest.CoreMatchers.equalTo;
 import static org.dependencytrack.model.ConfigPropertyConstants.BOM_VALIDATION_ENABLED;
+import static org.hamcrest.CoreMatchers.equalTo;
 
 public class VexResourceTest extends ResourceTest {
 
-    @Override
-    protected DeploymentContext configureDeployment() {
-        return ServletDeploymentContext.forServlet(new ServletContainer(
-                        new ResourceConfig(VexResource.class)
-                                .register(ApiFilter.class)
-                                .register(AuthenticationFilter.class)
-                                .register(MultiPartFeature.class)
-                                .register(JsonMappingExceptionMapper.class)))
-                .build();
-    }
+    @ClassRule
+    public static JerseyTestRule jersey = new JerseyTestRule(
+            new ResourceConfig(VexResource.class)
+                    .register(ApiFilter.class)
+                    .register(AuthenticationFilter.class)
+                    .register(MultiPartFeature.class)
+                    .register(JsonMappingExceptionMapper.class));
 
     @Test
     public void exportProjectAsCycloneDxTest() {
@@ -129,7 +125,7 @@ public class VexResourceTest extends ResourceTest {
                 ));
         qm.persist(project);
 
-        final Response response = target("%s/cyclonedx/project/%s".formatted(V1_VEX, project.getUuid()))
+        final Response response = jersey.target("%s/cyclonedx/project/%s".formatted(V1_VEX, project.getUuid()))
                 .request()
                 .header(X_API_KEY, apiKey)
                 .get(Response.class);
@@ -249,7 +245,7 @@ public class VexResourceTest extends ResourceTest {
                 }
                 """.getBytes());
 
-        final Response response = target(V1_VEX).request()
+        final Response response = jersey.target(V1_VEX).request()
                 .header(X_API_KEY, apiKey)
                 .put(Entity.entity("""
                         {
@@ -301,7 +297,7 @@ public class VexResourceTest extends ResourceTest {
                 </bom>
                 """.getBytes());
 
-        final Response response = target(V1_VEX).request()
+        final Response response = jersey.target(V1_VEX).request()
                 .header(X_API_KEY, apiKey)
                 .put(Entity.entity("""
                         {
@@ -334,7 +330,7 @@ public class VexResourceTest extends ResourceTest {
 
         final String vex = "a".repeat(StreamReadConstraints.DEFAULT_MAX_STRING_LEN + 1);
 
-        final Response response = target(V1_VEX).request()
+        final Response response = jersey.target(V1_VEX).request()
                 .header(X_API_KEY, apiKey)
                 .put(Entity.entity("""
                         {
@@ -349,7 +345,7 @@ public class VexResourceTest extends ResourceTest {
                 {
                   "status": 400,
                   "title": "The provided JSON payload could not be mapped",
-                  "detail": "The VEX is too large to be transmitted safely via Base64 encoded JSON value. Please use the \\"POST /api/v1/vex\\" endpoint with Content-Type \\"multipart/form-data\\" instead. Original cause: String length (20000001) exceeds the maximum length (20000000) (through reference chain: org.dependencytrack.resources.v1.vo.VexSubmitRequest[\\"vex\\"])"
+                  "detail": "The VEX is too large to be transmitted safely via Base64 encoded JSON value. Please use the \\"POST /api/v1/vex\\" endpoint with Content-Type \\"multipart/form-data\\" instead. Original cause: String value length (20000001) exceeds the maximum allowed (20000000, from `StreamReadConstraints.getMaxStringLength()`) (through reference chain: org.dependencytrack.resources.v1.vo.VexSubmitRequest[\\"vex\\"])"
                 }
                 """);
     }

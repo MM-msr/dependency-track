@@ -19,10 +19,10 @@
 package org.dependencytrack.resources.v1;
 
 import alpine.common.util.UuidUtil;
-import alpine.model.ConfigProperty;
 import alpine.notification.NotificationLevel;
 import alpine.server.filters.ApiFilter;
 import alpine.server.filters.AuthenticationFilter;
+import org.dependencytrack.JerseyTestRule;
 import org.dependencytrack.ResourceTest;
 import org.dependencytrack.model.ConfigPropertyConstants;
 import org.dependencytrack.model.NotificationPublisher;
@@ -33,42 +33,37 @@ import org.dependencytrack.notification.publisher.Publisher;
 import org.dependencytrack.notification.publisher.SendMailPublisher;
 import org.dependencytrack.persistence.DefaultObjectGenerator;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.servlet.ServletContainer;
-import org.glassfish.jersey.test.DeploymentContext;
-import org.glassfish.jersey.test.ServletDeploymentContext;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.Form;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
+import jakarta.ws.rs.client.Entity;
+import jakarta.ws.rs.core.Form;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.UUID;
 
 public class NotificationPublisherResourceTest extends ResourceTest {
 
-    @Override
-    protected DeploymentContext configureDeployment() {
-        return ServletDeploymentContext.forServlet(new ServletContainer(
-                new ResourceConfig(NotificationPublisherResource.class)
-                        .register(ApiFilter.class)
-                        .register(AuthenticationFilter.class)))
-                .build();
-    }
+    @ClassRule
+    public static JerseyTestRule jersey = new JerseyTestRule(
+            new ResourceConfig(NotificationPublisherResource.class)
+                    .register(ApiFilter.class)
+                    .register(AuthenticationFilter.class));
 
     @Before
     public void before() throws Exception {
         super.before();
-        DefaultObjectGenerator generator = new DefaultObjectGenerator();
-        generator.contextInitialized(null);
+        final var generator = new DefaultObjectGenerator();
+        generator.loadDefaultNotificationPublishers();
     }
 
     @Test
     public void getAllNotificationPublishersTest() {
-        Response response = target(V1_NOTIFICATION_PUBLISHER).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER).request()
                 .header(X_API_KEY, apiKey)
                 .get(Response.class);
         Assert.assertEquals(200, response.getStatus(), 0);
@@ -86,7 +81,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
 
     @Test
     public void getAllEventNotificationPublishersTest() {
-        Response response = target(V1_NOTIFICATION_PUBLISHER_EVENT).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER_EVENT).request()
                 .header(X_API_KEY, apiKey)
                 .get(Response.class);
         Assert.assertEquals(200, response.getStatus(), 0);
@@ -104,7 +99,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
 
     @Test
     public void getAllScheduledNotificationPublishersTest() {
-        Response response = target(V1_NOTIFICATION_PUBLISHER_SCHEDULED).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER_SCHEDULED).request()
                 .header(X_API_KEY, apiKey)
                 .get(Response.class);
         Assert.assertEquals(200, response.getStatus(), 0);
@@ -129,7 +124,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
         publisher.setTemplateMimeType("application/json");
         publisher.setPublisherClass(SendMailPublisher.class.getName());
         publisher.setDefaultPublisher(false);
-        Response response = target(V1_NOTIFICATION_PUBLISHER).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER).request()
                 .header(X_API_KEY, apiKey)
                 .put(Entity.entity(publisher, MediaType.APPLICATION_JSON));
         Assert.assertEquals(201, response.getStatus(), 0);
@@ -153,7 +148,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
         publisher.setTemplateMimeType("application/json");
         publisher.setPublisherClass(SendMailPublisher.class.getName());
         publisher.setDefaultPublisher(true);
-        Response response = target(V1_NOTIFICATION_PUBLISHER).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER).request()
                 .header(X_API_KEY, apiKey)
                 .put(Entity.entity(publisher, MediaType.APPLICATION_JSON));
         Assert.assertEquals(400, response.getStatus(), 0);
@@ -170,7 +165,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
         publisher.setTemplateMimeType("application/json");
         publisher.setPublisherClass(SendMailPublisher.class.getName());
         publisher.setDefaultPublisher(true);
-        Response response = target(V1_NOTIFICATION_PUBLISHER).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER).request()
                 .header(X_API_KEY, apiKey)
                 .put(Entity.entity(publisher, MediaType.APPLICATION_JSON));
         Assert.assertEquals(409, response.getStatus(), 0);
@@ -187,7 +182,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
         publisher.setTemplateMimeType("application/json");
         publisher.setPublisherClass(NotificationPublisherResource.class.getName());
         publisher.setDefaultPublisher(false);
-        Response response = target(V1_NOTIFICATION_PUBLISHER).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER).request()
                 .header(X_API_KEY, apiKey)
                 .put(Entity.entity(publisher, MediaType.APPLICATION_JSON));
         Assert.assertEquals(400, response.getStatus(), 0);
@@ -204,7 +199,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
         publisher.setTemplateMimeType("application/json");
         publisher.setPublisherClass("invalidClassFqcn");
         publisher.setDefaultPublisher(false);
-        Response response = target(V1_NOTIFICATION_PUBLISHER).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER).request()
                 .header(X_API_KEY, apiKey)
                 .put(Entity.entity(publisher, MediaType.APPLICATION_JSON));
         Assert.assertEquals(400, response.getStatus(), 0);
@@ -216,11 +211,11 @@ public class NotificationPublisherResourceTest extends ResourceTest {
     public void updateNotificationPublisherTest() {
         NotificationPublisher notificationPublisher = qm.createNotificationPublisher(
                 "Example Publisher", "Publisher description",
-                (Class) SendMailPublisher.class, "template", "text/html",
+                SendMailPublisher.class, "template", "text/html",
                 false
         );
         notificationPublisher.setName("Updated Publisher name");
-        Response response = target(V1_NOTIFICATION_PUBLISHER).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER).request()
                 .header(X_API_KEY, apiKey)
                 .post(Entity.entity(notificationPublisher, MediaType.APPLICATION_JSON));
         Assert.assertEquals(200, response.getStatus(), 0);
@@ -239,12 +234,12 @@ public class NotificationPublisherResourceTest extends ResourceTest {
     public void updateUnknownNotificationPublisherTest() {
         NotificationPublisher notificationPublisher = qm.createNotificationPublisher(
                 "Example Publisher", "Publisher description",
-                (Class) SendMailPublisher.class, "template", "text/html",
+                SendMailPublisher.class, "template", "text/html",
                 false
         );
         notificationPublisher = qm.detach(NotificationPublisher.class, notificationPublisher.getId());
         notificationPublisher.setUuid(UUID.randomUUID());
-        Response response = target(V1_NOTIFICATION_PUBLISHER).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER).request()
                 .header(X_API_KEY, apiKey)
                 .post(Entity.entity(notificationPublisher, MediaType.APPLICATION_JSON));
         Assert.assertEquals(404, response.getStatus(), 0);
@@ -257,7 +252,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
     public void updateExistingDefaultNotificationPublisherTest() {
         NotificationPublisher notificationPublisher = qm.getDefaultNotificationPublisher(DefaultNotificationPublishers.EMAIL);
         notificationPublisher.setName(notificationPublisher.getName() + " Updated");
-        Response response = target(V1_NOTIFICATION_PUBLISHER).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER).request()
                 .header(X_API_KEY, apiKey)
                 .post(Entity.entity(notificationPublisher, MediaType.APPLICATION_JSON));
         Assert.assertEquals(400, response.getStatus(), 0);
@@ -275,7 +270,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
         );
         notificationPublisher = qm.detach(NotificationPublisher.class, notificationPublisher.getId());
         notificationPublisher.setName(DefaultNotificationPublishers.MS_TEAMS.getPublisherName());
-        Response response = target(V1_NOTIFICATION_PUBLISHER).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER).request()
                 .header(X_API_KEY, apiKey)
                 .post(Entity.entity(notificationPublisher, MediaType.APPLICATION_JSON));
         Assert.assertEquals(409, response.getStatus(), 0);
@@ -288,11 +283,11 @@ public class NotificationPublisherResourceTest extends ResourceTest {
     public void updateNotificationPublisherWithInvalidClassTest() {
         NotificationPublisher notificationPublisher = qm.createNotificationPublisher(
                 "Example Publisher", "Publisher description",
-                (Class) SendMailPublisher.class, "template", "text/html",
+                SendMailPublisher.class, "template", "text/html",
                 false
         );
         notificationPublisher.setPublisherClass("unknownClass");
-        Response response = target(V1_NOTIFICATION_PUBLISHER).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER).request()
                 .header(X_API_KEY, apiKey)
                 .post(Entity.entity(notificationPublisher, MediaType.APPLICATION_JSON));
         Assert.assertEquals(400, response.getStatus(), 0);
@@ -305,11 +300,11 @@ public class NotificationPublisherResourceTest extends ResourceTest {
     public void updateNotificationPublisherWithClassNotImplementingPublisherInterfaceTest() {
         NotificationPublisher notificationPublisher = qm.createNotificationPublisher(
                 "Example Publisher", "Publisher description",
-                (Class) SendMailPublisher.class, "template", "text/html",
+                SendMailPublisher.class, "template", "text/html",
                 false
         );
         notificationPublisher.setPublisherClass(NotificationPublisherResource.class.getName());
-        Response response = target(V1_NOTIFICATION_PUBLISHER).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER).request()
                 .header(X_API_KEY, apiKey)
                 .post(Entity.entity(notificationPublisher, MediaType.APPLICATION_JSON));
         Assert.assertEquals(400, response.getStatus(), 0);
@@ -322,10 +317,10 @@ public class NotificationPublisherResourceTest extends ResourceTest {
     public void deleteNotificationPublisherWithNoRulesTest() {
         NotificationPublisher publisher = qm.createNotificationPublisher(
                 "Example Publisher", "Publisher description",
-                (Class) SendMailPublisher.class, "template", "text/html",
+                SendMailPublisher.class, "template", "text/html",
                 false
         );
-        Response response = target(V1_NOTIFICATION_PUBLISHER + "/" + publisher.getUuid()).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER + "/" + publisher.getUuid()).request()
                 .header(X_API_KEY, apiKey)
                 .delete();
         Assert.assertEquals(204, response.getStatus(), 0);
@@ -336,12 +331,12 @@ public class NotificationPublisherResourceTest extends ResourceTest {
     public void deleteNotificationPublisherWithLinkedNotificationRulesTest() {
         NotificationPublisher publisher = qm.createNotificationPublisher(
                 "Example Publisher", "Publisher description",
-                (Class) SendMailPublisher.class, "template", "text/html",
+                SendMailPublisher.class, "template", "text/html",
                 false
         );
         NotificationRule firstRule = qm.createNotificationRule("Example Rule 1", NotificationScope.PORTFOLIO, NotificationLevel.INFORMATIONAL, publisher);
         NotificationRule secondRule = qm.createNotificationRule("Example Rule 2", NotificationScope.PORTFOLIO, NotificationLevel.INFORMATIONAL, publisher);
-        Response response = target(V1_NOTIFICATION_PUBLISHER + "/" + publisher.getUuid()).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER + "/" + publisher.getUuid()).request()
                 .header(X_API_KEY, apiKey)
                 .delete();
         Assert.assertEquals(204, response.getStatus(), 0);
@@ -352,7 +347,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
 
     @Test
     public void deleteUnknownNotificationPublisherTest() {
-        Response response = target(V1_NOTIFICATION_PUBLISHER + "/" + UUID.randomUUID()).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER + "/" + UUID.randomUUID()).request()
                 .header(X_API_KEY, apiKey)
                 .delete();
         Assert.assertEquals(404, response.getStatus(), 0);
@@ -361,7 +356,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
     @Test
     public void deleteDefaultNotificationPublisherTest() {
         NotificationPublisher notificationPublisher = qm.getDefaultNotificationPublisher(DefaultNotificationPublishers.EMAIL);
-        Response response = target(V1_NOTIFICATION_PUBLISHER + "/" + notificationPublisher.getUuid()).request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER + "/" + notificationPublisher.getUuid()).request()
                 .header(X_API_KEY, apiKey)
                 .delete();
         Assert.assertEquals(400, response.getStatus(), 0);
@@ -374,7 +369,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
     public void testSmtpPublisherConfigTest() {
         Form form = new Form();
         form.param("destination", "test@example.com");
-        Response response = target(V1_NOTIFICATION_PUBLISHER + "/test/smtp").request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER + "/test/smtp").request()
                 .header(X_API_KEY, apiKey)
                 .post(Entity.entity(form, MediaType.APPLICATION_FORM_URLENCODED_TYPE));
         Assert.assertEquals(200, response.getStatus(), 0);
@@ -386,14 +381,14 @@ public class NotificationPublisherResourceTest extends ResourceTest {
         slackPublisher.setName(slackPublisher.getName()+" Updated");
         qm.persist(slackPublisher);
         qm.detach(NotificationPublisher.class, slackPublisher.getId());
-        ConfigProperty property = qm.getConfigProperty(
+        qm.createConfigProperty(
                 ConfigPropertyConstants.NOTIFICATION_TEMPLATE_DEFAULT_OVERRIDE_ENABLED.getGroupName(),
-                ConfigPropertyConstants.NOTIFICATION_TEMPLATE_DEFAULT_OVERRIDE_ENABLED.getPropertyName()
+                ConfigPropertyConstants.NOTIFICATION_TEMPLATE_DEFAULT_OVERRIDE_ENABLED.getPropertyName(),
+                "true",
+                ConfigPropertyConstants.NOTIFICATION_TEMPLATE_DEFAULT_OVERRIDE_ENABLED.getPropertyType(),
+                ConfigPropertyConstants.NOTIFICATION_TEMPLATE_DEFAULT_OVERRIDE_ENABLED.getDescription()
         );
-        property.setPropertyValue("true");
-        qm.persist(property);
-        qm.detach(ConfigProperty.class, property.getId());
-        Response response = target(V1_NOTIFICATION_PUBLISHER + "/restoreDefaultTemplates").request()
+        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER + "/restoreDefaultTemplates").request()
                 .header(X_API_KEY, apiKey)
                 .post(Entity.json(""));
         qm.getPersistenceManager().refreshAll();

@@ -32,6 +32,7 @@ import org.dependencytrack.notification.publisher.SendMailPublisher;
 import org.dependencytrack.notification.vo.AnalysisDecisionChange;
 import org.dependencytrack.notification.vo.BomConsumedOrProcessed;
 import org.dependencytrack.notification.vo.BomProcessingFailed;
+import org.dependencytrack.notification.vo.BomValidationFailed;
 import org.dependencytrack.notification.vo.NewVulnerabilityIdentified;
 import org.dependencytrack.notification.vo.NewVulnerableDependency;
 import org.dependencytrack.notification.vo.PolicyViolationIdentified;
@@ -39,11 +40,11 @@ import org.dependencytrack.notification.vo.VexConsumedOrProcessed;
 import org.dependencytrack.notification.vo.ViolationAnalysisDecisionChange;
 import org.dependencytrack.persistence.QueryManager;
 
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
 import javax.jdo.PersistenceManager;
 import javax.jdo.Query;
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
@@ -185,6 +186,9 @@ public class NotificationRouter implements Subscriber {
                 limitToProject(ctx, rules, result, notification, subject.getProject());
             } else if (NotificationScope.PORTFOLIO.name().equals(notification.getScope())
                     && notification.getSubject() instanceof final BomProcessingFailed subject) {
+                limitToProject(ctx, rules, result, notification, subject.getProject());
+            } else if (NotificationScope.PORTFOLIO.name().equals(notification.getScope())
+                    && notification.getSubject() instanceof final BomValidationFailed subject) {
                 limitToProject(ctx, rules, result, notification, subject.getProject());
             } else if (NotificationScope.PORTFOLIO.name().equals(notification.getScope())
                     && notification.getSubject() instanceof final VexConsumedOrProcessed subject) {

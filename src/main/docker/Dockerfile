@@ -1,6 +1,6 @@
-FROM eclipse-temurin:21.0.2_13-jre-jammy@sha256:d9f7b8326b9d396d070432982a998015a04ffb8885b145e97777a5ae324a8df1 AS jre-build
+FROM eclipse-temurin:21.0.3_9-jre-jammy@sha256:a56ee1f79cf57b2b31152cd471a4c85b6deb3057e4a1fbe8e50b57e7d2a1d7c9 AS jre-build
 
-FROM debian:stable-slim@sha256:2c96e0011b1b2855d8e482e6d4ced6d292ea50750e9e535d09510167ae4858f9
+FROM debian:stable-slim@sha256:f8bbfa052db81e5b8ac12e4a1d8310a85d1509d4d0d5579148059c0e8b717d4e
 
 # Arguments that can be passed at build time
 # Directory names must end with / to avoid errors when ADDing and COPYing
@@ -16,7 +16,7 @@ ENV TZ=Etc/UTC \
     # Dependency-Track's default logging level
     LOGGING_LEVEL=INFO \
     # JVM Options that are passed at runtime by default
-    JAVA_OPTIONS="-XX:+UseParallelGC -XX:MaxRAMPercentage=90.0" \
+    JAVA_OPTIONS="-XX:+UseParallelGC -XX:+UseStringDeduplication -XX:MaxRAMPercentage=90.0" \
     # JVM Options that can be passed at runtime, while maintaining also those set in JAVA_OPTIONS
     EXTRA_JAVA_OPTIONS="" \
     # The web context defaults to the root. To override, supply an alternative context which starts with a / but does not end with one

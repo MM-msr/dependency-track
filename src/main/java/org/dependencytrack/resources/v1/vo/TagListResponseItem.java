@@ -16,23 +16,16 @@
  * SPDX-License-Identifier: Apache-2.0
  * Copyright (c) OWASP Foundation. All Rights Reserved.
  */
-package org.dependencytrack.resources.v1.exception;
+package org.dependencytrack.resources.v1.vo;
 
-import org.junit.Test;
+import io.swagger.v3.oas.annotations.Parameter;
 
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
-public class NotFoundExceptionMapperTest {
-
-    @Test
-    @SuppressWarnings("resource")
-    public void testToResponse() {
-        final Response response = new NotFoundExceptionMapper().toResponse(new NotFoundException());
-        assertThat(response.getStatus()).isEqualTo(404);
-        assertThat(response.getEntity()).isNull();
-    }
-
+/**
+ * @since 4.12.0
+ */
+public record TagListResponseItem(
+        @Parameter(description = "Name of the tag", required = true) String name,
+        @Parameter(description = "Number of projects assigned to this tag") long projectCount,
+        @Parameter(description = "Number of policies assigned to this tag") long policyCount
+) {
 }

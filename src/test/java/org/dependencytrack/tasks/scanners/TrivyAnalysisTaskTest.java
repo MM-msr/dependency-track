@@ -44,7 +44,7 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 
-import javax.json.Json;
+import jakarta.json.Json;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -366,10 +366,25 @@ public class TrivyAnalysisTaskTest extends PersistenceCapableTest {
                             "applications": [
                               {
                                 "type": "jar",
+                                "packages": [
+                                  {
+                                    "name": "com.fasterxml.woodstox:woodstox-core",
+                                    "version": "5.0.0",
+                                    "src_name": "com.fasterxml.woodstox:woodstox-core",
+                                    "src_version": "5.0.0",
+                                    "licenses": [],
+                                    "layer": {
+                                      "eosl": false,
+                                      "extended": false
+                                    }
+                                  }
+                                ],
                                 "libraries": [
                                   {
                                     "name": "com.fasterxml.woodstox:woodstox-core",
                                     "version": "5.0.0",
+                                    "src_name": "com.fasterxml.woodstox:woodstox-core",
+                                    "src_version": "5.0.0",
                                     "licenses": [],
                                     "layer": {
                                       "eosl": false,

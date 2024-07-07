@@ -16,27 +16,17 @@
  * SPDX-License-Identifier: Apache-2.0
  * Copyright (c) OWASP Foundation. All Rights Reserved.
  */
-package org.dependencytrack.resources.v1.exception;
-
-import alpine.server.resources.GlobalExceptionHandler;
-
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
+package org.dependencytrack.model;
 
 /**
- * An {@link ExceptionMapper} to handle {@link NotFoundException}, that would otherwise be
- * handled by Alpine's {@link GlobalExceptionHandler}, resulting in a misleading {@code HTTP 500} response.
- *
- * @since 4.11.0
+ * @param vulnId {@link Vulnerability#getVulnId()}
+ * @param source {@link Vulnerability#getSource()}
+ * @since 4.12.0
  */
-@Provider
-public class NotFoundExceptionMapper implements ExceptionMapper<NotFoundException> {
+public record VulnIdAndSource(String vulnId, Vulnerability.Source source) {
 
-    @Override
-    public Response toResponse(final NotFoundException exception) {
-        return Response.status(Response.Status.NOT_FOUND).build();
+    public VulnIdAndSource(String vulnId, String source) {
+        this(vulnId, Vulnerability.Source.valueOf(source));
     }
 
 }

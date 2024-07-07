@@ -18,6 +18,9 @@
  */
 package org.dependencytrack.tasks;
 
+import static org.dependencytrack.notification.publisher.Publisher.CONFIG_TEMPLATE_KEY;
+import static org.dependencytrack.notification.publisher.Publisher.CONFIG_TEMPLATE_MIME_TYPE_KEY;
+
 import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.time.ZoneId;
@@ -25,9 +28,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
-import javax.json.Json;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
 import java.util.stream.Collectors;
 
 import org.dependencytrack.exception.PublisherException;
@@ -45,8 +45,9 @@ import org.dependencytrack.persistence.QueryManager;
 import alpine.common.logging.Logger;
 import alpine.notification.Notification;
 import alpine.notification.NotificationLevel;
-import static org.dependencytrack.notification.publisher.Publisher.CONFIG_TEMPLATE_KEY;
-import static org.dependencytrack.notification.publisher.Publisher.CONFIG_TEMPLATE_MIME_TYPE_KEY;
+import jakarta.json.Json;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
 
 /* 
  * The scheduled notification task is responsible for processing scheduled notifications and publishing them with the configured publisher.

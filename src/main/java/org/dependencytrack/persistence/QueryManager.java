@@ -731,6 +731,10 @@ public class QueryManager extends AlpineQueryManager {
         return getPolicyQueryManager().getPolicyViolations(includeSuppressed);
     }
 
+    public List<PolicyViolation> getAllPolicyViolationsSince(boolean includeSuppressed, ZonedDateTime sinceOccurred) {
+        return getPolicyQueryManager().getAllPolicyViolations(includeSuppressed, sinceOccurred);
+    }
+
     public ViolationAnalysis getViolationAnalysis(Component component, PolicyViolation policyViolation) {
         return getPolicyQueryManager().getViolationAnalysis(component, policyViolation);
     }
@@ -1132,6 +1136,10 @@ public class QueryManager extends AlpineQueryManager {
 
     public List<Finding> getFindingsSince(Project project, boolean includeSuppressed, ZonedDateTime sinceAttributedOn) {
         return getFindingsQueryManager().getFindings(project, includeSuppressed, sinceAttributedOn);
+    }
+
+    public List<Finding> getAllFindingsSince(boolean includeSuppressed, ZonedDateTime sinceAttributedOn) {
+        return getFindingsQueryManager().getFindings(includeSuppressed, sinceAttributedOn);
     }
 
     public PaginatedResult getAllFindings(final Map<String, String> filters, final boolean showSuppressed, final boolean showInactive) {

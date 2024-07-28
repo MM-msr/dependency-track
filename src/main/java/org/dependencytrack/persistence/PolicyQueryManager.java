@@ -305,7 +305,6 @@ final class PolicyQueryManager extends QueryManager implements IQueryManager {
      * @param includeSuppressed Whether to include suppressed violations or not
      * @return a List of all Policy violations
      */
-    @SuppressWarnings("unchecked")
     public PaginatedResult getPolicyViolations(final Project project, boolean includeSuppressed) {
         PaginatedResult result;
         final String queryFilter = includeSuppressed ? "project.id == :pid" : "project.id == :pid && (analysis.suppressed == false || analysis.suppressed == null)";
@@ -336,7 +335,6 @@ final class PolicyQueryManager extends QueryManager implements IQueryManager {
      * @param since the date to retrieve violations since
      * @return a List of all Policy violations
      */
-    @SuppressWarnings("unchecked")
     public PaginatedResult getPolicyViolations(final Project project, boolean includeSuppressed, ZonedDateTime since) {
         PaginatedResult result;
         final String queryFilter = includeSuppressed
@@ -367,7 +365,6 @@ final class PolicyQueryManager extends QueryManager implements IQueryManager {
      * @param component the component to retrieve violations for
      * @return a List of all Policy violations
      */
-    @SuppressWarnings("unchecked")
     public PaginatedResult getPolicyViolations(final Component component, boolean includeSuppressed) {
         final Query<PolicyViolation> query = pm.newQuery(PolicyViolation.class);
         if (includeSuppressed) {
@@ -391,7 +388,6 @@ final class PolicyQueryManager extends QueryManager implements IQueryManager {
      * Returns a List of all Policy violations for the entire portfolio.
      * @return a List of all Policy violations
      */
-    @SuppressWarnings("unchecked")
     public PaginatedResult getPolicyViolations(boolean includeSuppressed) {
         final Query<PolicyViolation> query = pm.newQuery(PolicyViolation.class);
         if (!includeSuppressed) {

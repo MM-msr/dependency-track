@@ -18,17 +18,16 @@
  */
 package org.dependencytrack.notification.vo;
 
-import org.dependencytrack.model.scheduled.vulnerabilities.VulnerabilityDetails;
-import org.dependencytrack.model.scheduled.vulnerabilities.VulnerabilityOverview;
-import org.dependencytrack.model.scheduled.vulnerabilities.VulnerabilitySummary;
+import org.dependencytrack.model.NotificationRule;
 
 /**
- * Main part of the ScheduledNewVulnerabilitiesIdentified Template Models.
- * Contains the separate parts used in the template to display the new
- * vulnerabilities identified since the last notification.
+ * @since 4.13.0
  */
-public record ScheduledNewVulnerabilitiesIdentified(
-        VulnerabilityOverview overview,
-        VulnerabilitySummary summary,
-        VulnerabilityDetails details) {
+public interface ScheduledNotificationSubject {
+
+    /**
+     * @return ID of the {@link NotificationRule} for which this subject was created.
+     */
+    long getRuleId();
+
 }

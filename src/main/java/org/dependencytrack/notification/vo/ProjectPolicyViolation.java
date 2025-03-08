@@ -16,21 +16,23 @@
  * SPDX-License-Identifier: Apache-2.0
  * Copyright (c) OWASP Foundation. All Rights Reserved.
  */
-package org.dependencytrack.util;
+package org.dependencytrack.notification.vo;
+
+import org.dependencytrack.model.Component;
+import org.dependencytrack.model.PolicyCondition;
+import org.dependencytrack.model.PolicyViolation;
+import org.dependencytrack.model.ViolationAnalysisState;
 
 import java.util.Date;
 
-/* 
- * Helper class for scheduled notifications to provide more human-friendly output in the templates.
- * This class is mainly used to provide default values for null objects, which may be common in the Finding objects
- * used in the scheduled notification for new vulnerabilities.
+/**
+ * @since 4.13.0
  */
-public class ScheduledUtil {
-    public static String getValueOrEmptyIfNull(Object value) {
-        return value == null ? "" : value.toString();
-    }
-
-    public static String getDateOrUnknownIfNull(Date date) {
-        return date == null ? "Unknown" : DateUtil.toISO8601(date);
-    }
+public record ProjectPolicyViolation(
+        Component component,
+        PolicyCondition policyCondition,
+        PolicyViolation.Type violationType,
+        Date timestamp,
+        ViolationAnalysisState analysisState,
+        boolean isSuppressed) {
 }

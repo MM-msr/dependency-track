@@ -16,19 +16,24 @@
  * SPDX-License-Identifier: Apache-2.0
  * Copyright (c) OWASP Foundation. All Rights Reserved.
  */
-package org.dependencytrack.notification.vo;
+package org.dependencytrack.resources.v1.exception;
 
-import org.dependencytrack.model.scheduled.policyviolations.PolicyViolationDetails;
-import org.dependencytrack.model.scheduled.policyviolations.PolicyViolationOverview;
-import org.dependencytrack.model.scheduled.policyviolations.PolicyViolationSummary;
+import org.dependencytrack.resources.v1.problems.ProblemDetails;
 
-/**
- * Main part of the ScheduledPolicyViolationsIdentified Template Models.
- * Contains the separate parts used in the template to display the new policy
- * violations identified since the last notification.
- */
-public record ScheduledPolicyViolationsIdentified(
-        PolicyViolationOverview overview,
-        PolicyViolationSummary summary,
-        PolicyViolationDetails details) {
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.ext.ExceptionMapper;
+import jakarta.ws.rs.ext.Provider;
+
+@Provider
+public class IllegalArgumentExceptionMapper implements ExceptionMapper<IllegalArgumentException> {
+
+    @Override
+    public Response toResponse(final IllegalArgumentException exception) {
+        final var problemDetails = new ProblemDetails();
+        problemDetails.setStatus(400);
+        problemDetails.setTitle("Illegal argument provided");
+        problemDetails.setDetail(exception.getMessage());
+        return problemDetails.toResponse();
+    }
+
 }

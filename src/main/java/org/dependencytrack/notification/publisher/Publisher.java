@@ -31,11 +31,11 @@ import org.dependencytrack.notification.vo.AnalysisDecisionChange;
 import org.dependencytrack.notification.vo.BomConsumedOrProcessed;
 import org.dependencytrack.notification.vo.BomProcessingFailed;
 import org.dependencytrack.notification.vo.BomValidationFailed;
+import org.dependencytrack.notification.vo.NewPolicyViolationsSummary;
+import org.dependencytrack.notification.vo.NewVulnerabilitiesSummary;
 import org.dependencytrack.notification.vo.NewVulnerabilityIdentified;
 import org.dependencytrack.notification.vo.NewVulnerableDependency;
 import org.dependencytrack.notification.vo.PolicyViolationIdentified;
-import org.dependencytrack.notification.vo.ScheduledNewVulnerabilitiesIdentified;
-import org.dependencytrack.notification.vo.ScheduledPolicyViolationsIdentified;
 import org.dependencytrack.notification.vo.VexConsumedOrProcessed;
 import org.dependencytrack.notification.vo.ViolationAnalysisDecisionChange;
 import org.dependencytrack.persistence.QueryManager;
@@ -132,12 +132,16 @@ public interface Publisher {
                 } else if (notification.getSubject() instanceof final PolicyViolationIdentified subject) {
                     context.put("subject", subject);
                     context.put("subjectJson", NotificationUtil.toJson(subject));
-                } else if (notification.getSubject() instanceof final ScheduledNewVulnerabilitiesIdentified subject) {
+                } else if (notification.getSubject() instanceof final NewVulnerabilitiesSummary subject) {
                     context.put("subject", subject);
-                    context.put("subjectJson", NotificationUtil.toJson(subject));
-                } else if (notification.getSubject() instanceof final ScheduledPolicyViolationsIdentified subject) {
+                    // NB: Pass no subjectJson to avoid the serialization overhead of
+                    // potentially very large object graphs in the subject.
+                    // Templates are expected to work on subject exclusively.
+                } else if (notification.getSubject() instanceof final NewPolicyViolationsSummary subject) {
                     context.put("subject", subject);
-                    context.put("subjectJson", NotificationUtil.toJson(subject));
+                    // NB: Pass no subjectJson to avoid the serialization overhead of
+                    // potentially very large object graphs in the subject.
+                    // Templates are expected to work on subject exclusively.
                 }
             } else if  (NotificationScope.SYSTEM.name().equals(notification.getScope())) {
                 if (notification.getSubject() instanceof final UserPrincipal subject) {

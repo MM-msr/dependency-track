@@ -16,17 +16,29 @@
  * SPDX-License-Identifier: Apache-2.0
  * Copyright (c) OWASP Foundation. All Rights Reserved.
  */
-package org.dependencytrack.model.scheduled.policyviolations;
+package org.dependencytrack.model.validation;
 
-import java.util.List;
-import java.util.Map;
+import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import org.dependencytrack.model.PolicyViolation;
-import org.dependencytrack.model.Project;
-
-/* 
- * Part of the ScheduledPolicyViolationsIdentified Template Models.
- * Contains all detailed policy violations, grouped by the affected projects.
+/**
+ * @since 4.13.0
  */
-public record PolicyViolationDetails(Map<Project, List<PolicyViolation>> affectedProjectViolations) {
+@Documented
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.FIELD, ElementType.PARAMETER})
+@Constraint(validatedBy = CronExpressionValidator.class)
+public @interface ValidCronExpression {
+
+    String message() default "The cron expression must be valid";
+
+    Class<?>[] groups() default {};
+
+    Class<? extends Payload>[] payload() default {};
+
 }

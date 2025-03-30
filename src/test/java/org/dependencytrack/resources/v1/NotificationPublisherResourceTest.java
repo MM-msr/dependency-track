@@ -30,12 +30,14 @@ import org.dependencytrack.ResourceTest;
 import org.dependencytrack.model.ConfigPropertyConstants;
 import org.dependencytrack.model.NotificationPublisher;
 import org.dependencytrack.model.NotificationRule;
+import org.dependencytrack.model.NotificationTriggerType;
 import org.dependencytrack.notification.NotificationGroup;
 import org.dependencytrack.notification.NotificationScope;
 import org.dependencytrack.notification.publisher.DefaultNotificationPublishers;
 import org.dependencytrack.notification.publisher.Publisher;
 import org.dependencytrack.notification.publisher.SendMailPublisher;
 import org.dependencytrack.notification.publisher.SlackPublisher;
+import org.dependencytrack.notification.publisher.WebhookPublisher;
 import org.dependencytrack.persistence.DefaultObjectGenerator;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.Assert;
@@ -50,11 +52,15 @@ import jakarta.ws.rs.core.Form;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.anyUrl;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
 import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
@@ -86,46 +92,10 @@ public class NotificationPublisherResourceTest extends ResourceTest {
         Assert.assertNull(response.getHeaderString(TOTAL_COUNT_HEADER));
         JsonArray json = parseJsonArray(response);
         Assert.assertNotNull(json);
-        Assert.assertEquals(10, json.size());
-        Assert.assertEquals("Console", json.getJsonObject(1).getString("name"));
-        Assert.assertEquals("Displays notifications on the system console", json.getJsonObject(1).getString("description"));
-        Assert.assertEquals("text/plain", json.getJsonObject(1).getString("templateMimeType"));
-        Assert.assertNotNull("template");
-        Assert.assertTrue(json.getJsonObject(1).getBoolean("defaultPublisher"));
-        Assert.assertTrue(UuidUtil.isValidUUID(json.getJsonObject(1).getString("uuid")));
-    }
-
-    @Test
-    public void getAllEventNotificationPublishersTest() {
-        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER_EVENT).request()
-                .header(X_API_KEY, apiKey)
-                .get(Response.class);
-        Assert.assertEquals(200, response.getStatus(), 0);
-        Assert.assertNull(response.getHeaderString(TOTAL_COUNT_HEADER));
-        JsonArray json = parseJsonArray(response);
-        Assert.assertNotNull(json);
         Assert.assertEquals(8, json.size());
         Assert.assertEquals("Console", json.getJsonObject(1).getString("name"));
         Assert.assertEquals("Displays notifications on the system console", json.getJsonObject(1).getString("description"));
         Assert.assertEquals("text/plain", json.getJsonObject(1).getString("templateMimeType"));
-        Assert.assertNotNull("template");
-        Assert.assertTrue(json.getJsonObject(1).getBoolean("defaultPublisher"));
-        Assert.assertTrue(UuidUtil.isValidUUID(json.getJsonObject(1).getString("uuid")));
-    }
-
-    @Test
-    public void getAllScheduledNotificationPublishersTest() {
-        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER_SCHEDULED).request()
-                .header(X_API_KEY, apiKey)
-                .get(Response.class);
-        Assert.assertEquals(200, response.getStatus(), 0);
-        Assert.assertNull(response.getHeaderString(TOTAL_COUNT_HEADER));
-        JsonArray json = parseJsonArray(response);
-        Assert.assertNotNull(json);
-        Assert.assertEquals(2, json.size());
-        Assert.assertEquals("Scheduled Email", json.getJsonObject(1).getString("name"));
-        Assert.assertEquals("Sends summarized notifications to an email address in a defined schedule", json.getJsonObject(1).getString("description"));
-        Assert.assertEquals("text/html", json.getJsonObject(1).getString("templateMimeType"));
         Assert.assertNotNull("template");
         Assert.assertTrue(json.getJsonObject(1).getBoolean("defaultPublisher"));
         Assert.assertTrue(UuidUtil.isValidUUID(json.getJsonObject(1).getString("uuid")));
@@ -148,33 +118,6 @@ public class NotificationPublisherResourceTest extends ResourceTest {
         Assert.assertNotNull(json);
         Assert.assertEquals("Example Publisher", json.getString("name"));
         Assert.assertFalse(json.getBoolean("defaultPublisher"));
-        Assert.assertFalse(json.getBoolean("publishScheduled"));
-        Assert.assertEquals("Publisher description", json.getString("description"));
-        Assert.assertEquals("template", json.getString("template"));
-        Assert.assertEquals("application/json", json.getString("templateMimeType"));
-        Assert.assertTrue(UuidUtil.isValidUUID(json.getString("uuid")));
-        Assert.assertEquals(SendMailPublisher.class.getName(), json.getString("publisherClass"));
-    }
-
-    @Test
-    public void createNotificationPublisherWithPublishScheduledTest() {
-        NotificationPublisher publisher = new NotificationPublisher();
-        publisher.setName("Example Publisher");
-        publisher.setDescription("Publisher description");
-        publisher.setTemplate("template");
-        publisher.setTemplateMimeType("application/json");
-        publisher.setPublisherClass(SendMailPublisher.class.getName());
-        publisher.setDefaultPublisher(false);
-        publisher.setPublishScheduled(true);
-        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER).request()
-                .header(X_API_KEY, apiKey)
-                .put(Entity.entity(publisher, MediaType.APPLICATION_JSON));
-        Assert.assertEquals(201, response.getStatus(), 0);
-        JsonObject json = parseJsonObject(response);
-        Assert.assertNotNull(json);
-        Assert.assertEquals("Example Publisher", json.getString("name"));
-        Assert.assertFalse(json.getBoolean("defaultPublisher"));
-        Assert.assertTrue(json.getBoolean("publishScheduled"));
         Assert.assertEquals("Publisher description", json.getString("description"));
         Assert.assertEquals("template", json.getString("template"));
         Assert.assertEquals("application/json", json.getString("templateMimeType"));
@@ -266,32 +209,6 @@ public class NotificationPublisherResourceTest extends ResourceTest {
         Assert.assertNotNull(json);
         Assert.assertEquals("Updated Publisher name", json.getString("name"));
         Assert.assertFalse(json.getBoolean("defaultPublisher"));
-        Assert.assertFalse(json.getBoolean("publishScheduled"));
-        Assert.assertEquals("Publisher description", json.getString("description"));
-        Assert.assertEquals("template", json.getString("template"));
-        Assert.assertEquals("text/html", json.getString("templateMimeType"));
-        Assert.assertEquals(notificationPublisher.getUuid().toString(), json.getString("uuid"));
-        Assert.assertEquals(SendMailPublisher.class.getName(), json.getString("publisherClass"));
-    }
-
-    @Test
-    public void updateNotificationPublisherToScheduledTest() {
-        NotificationPublisher notificationPublisher = qm.createNotificationPublisher(
-                "Example Publisher", "Publisher description",
-                SendMailPublisher.class, "template", "text/html",
-                false
-        );
-        notificationPublisher.setName("Updated Publisher name");
-        notificationPublisher.setPublishScheduled(true);
-        Response response = jersey.target(V1_NOTIFICATION_PUBLISHER).request()
-                .header(X_API_KEY, apiKey)
-                .post(Entity.entity(notificationPublisher, MediaType.APPLICATION_JSON));
-        Assert.assertEquals(200, response.getStatus(), 0);
-        JsonObject json = parseJsonObject(response);
-        Assert.assertNotNull(json);
-        Assert.assertEquals("Updated Publisher name", json.getString("name"));
-        Assert.assertFalse(json.getBoolean("defaultPublisher"));
-        Assert.assertTrue(json.getBoolean("publishScheduled"));
         Assert.assertEquals("Publisher description", json.getString("description"));
         Assert.assertEquals("template", json.getString("template"));
         Assert.assertEquals("text/html", json.getString("templateMimeType"));
@@ -319,7 +236,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
 
     @Test
     public void updateExistingDefaultNotificationPublisherTest() {
-        NotificationPublisher notificationPublisher = qm.getDefaultNotificationPublisher(DefaultNotificationPublishers.EMAIL);
+        NotificationPublisher notificationPublisher = qm.getDefaultNotificationPublisher(SendMailPublisher.class);
         notificationPublisher.setName(notificationPublisher.getName() + " Updated");
         Response response = jersey.target(V1_NOTIFICATION_PUBLISHER).request()
                 .header(X_API_KEY, apiKey)
@@ -424,7 +341,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
 
     @Test
     public void deleteDefaultNotificationPublisherTest() {
-        NotificationPublisher notificationPublisher = qm.getDefaultNotificationPublisher(DefaultNotificationPublishers.EMAIL);
+        NotificationPublisher notificationPublisher = qm.getDefaultNotificationPublisher(SendMailPublisher.class);
         Response response = jersey.target(V1_NOTIFICATION_PUBLISHER + "/" + notificationPublisher.getUuid()).request()
                 .header(X_API_KEY, apiKey)
                 .delete();
@@ -469,6 +386,38 @@ public class NotificationPublisherResourceTest extends ResourceTest {
     }
 
     @Test
+    public void testScheduledNotificationRuleTest() {
+        final var notificationPublisher = qm.getDefaultNotificationPublisher(WebhookPublisher.class);
+        final NotificationRule rule = qm.createScheduledNotificationRule(
+                "rule", NotificationScope.PORTFOLIO, NotificationLevel.INFORMATIONAL, notificationPublisher);
+        rule.setNotifyOn(
+                Arrays.stream(NotificationGroup.values())
+                        .filter(group -> group.getSupportedTriggerType() == NotificationTriggerType.SCHEDULE)
+                        .collect(Collectors.toSet()));
+
+        final var wireMock = new WireMockServer(options().dynamicPort());
+        wireMock.start();
+        try {
+            rule.setPublisherConfig("{\"destination\":\"%s\"}".formatted(wireMock.baseUrl()));
+
+            wireMock.stubFor(WireMock.post(WireMock.anyUrl())
+                    .willReturn(aResponse()
+                            .withStatus(200)));
+
+            final Response response = jersey.target(V1_NOTIFICATION_PUBLISHER + "/test/" + rule.getUuid()).request()
+                    .header(X_API_KEY, apiKey)
+                    .post(Entity.entity("", MediaType.APPLICATION_FORM_URLENCODED_TYPE));
+            assertThat(response.getStatus()).isEqualTo(200);
+
+            await("Notification Delivery")
+                    .atMost(Duration.ofSeconds(5))
+                    .untilAsserted(() -> wireMock.verify(rule.getNotifyOn().size(), anyRequestedFor(anyUrl())));
+        } finally {
+            wireMock.stop();
+        }
+    }
+
+    @Test
     public void testNotificationRuleJiraTest() throws Exception {
         new DefaultObjectGenerator().loadDefaultNotificationPublishers();
 
@@ -488,6 +437,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
         notificationRule.setNotifyOn(Set.of(NotificationGroup.NEW_VULNERABILITY));
         notificationRule.setNotificationLevel(NotificationLevel.INFORMATIONAL);
         notificationRule.setScope(NotificationScope.PORTFOLIO);
+        notificationRule.setTriggerType(NotificationTriggerType.EVENT);
         qm.persist(notificationRule);
 
         final var wireMock = new WireMockServer(options().dynamicPort());
@@ -548,7 +498,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
 
     @Test
     public void restoreDefaultTemplatesTest() {
-        NotificationPublisher slackPublisher = qm.getDefaultNotificationPublisher(DefaultNotificationPublishers.SLACK);
+        NotificationPublisher slackPublisher = qm.getDefaultNotificationPublisher(DefaultNotificationPublishers.SLACK.getPublisherClass());
         slackPublisher.setName(slackPublisher.getName() + " Updated");
         qm.persist(slackPublisher);
         qm.detach(NotificationPublisher.class, slackPublisher.getId());
@@ -565,7 +515,7 @@ public class NotificationPublisherResourceTest extends ResourceTest {
         qm.getPersistenceManager().refreshAll();
         Assert.assertEquals(200, response.getStatus(), 0);
         Assert.assertFalse(qm.isEnabled(ConfigPropertyConstants.NOTIFICATION_TEMPLATE_DEFAULT_OVERRIDE_ENABLED));
-        slackPublisher = qm.getDefaultNotificationPublisher(DefaultNotificationPublishers.SLACK);
+        slackPublisher = qm.getDefaultNotificationPublisher(DefaultNotificationPublishers.SLACK.getPublisherClass());
         Assert.assertEquals(DefaultNotificationPublishers.SLACK.getPublisherName(), slackPublisher.getName());
     }
 }

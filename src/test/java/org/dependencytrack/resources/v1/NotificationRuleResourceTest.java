@@ -45,6 +45,7 @@ import jakarta.json.JsonObject;
 import jakarta.ws.rs.client.Entity;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -140,6 +141,80 @@ public class NotificationRuleResourceTest extends ResourceTest {
     }
 
     @Test
+    public void createScheduledNotificationRuleTest() {
+        final NotificationPublisher publisher = qm.getNotificationPublisher(
+                DefaultNotificationPublishers.SLACK.getPublisherName());
+
+        final Response response = jersey.target(V1_NOTIFICATION_RULE + "/scheduled")
+                .request()
+                .header(X_API_KEY, apiKey)
+                .put(Entity.json(/* language=JSON */ """
+                        {
+                          "name": "foo",
+                          "scope": "PORTFOLIO",
+                          "notificationLevel": "INFORMATIONAL",
+                          "publisher": {
+                            "uuid": "%s"
+                          }
+                        }
+                        """.formatted(publisher.getUuid())));
+        assertThat(response.getStatus()).isEqualTo(201);
+        assertThatJson(getPlainTextBody(response)).isEqualTo(/* language=JSON */ """
+                {
+                  "name": "foo",
+                  "enabled": false,
+                  "notifyChildren": false,
+                  "logSuccessfulPublish": false,
+                  "scope": "PORTFOLIO",
+                  "notificationLevel": "INFORMATIONAL",
+                  "projects": [],
+                  "tags": [],
+                  "teams": [],
+                  "notifyOn": [],
+                  "publisher": {
+                    "name": "Slack",
+                    "description": "${json-unit.any-string}",
+                    "publisherClass": "${json-unit.any-string}",
+                    "templateMimeType": "${json-unit.any-string}",
+                    "defaultPublisher": true,
+                    "uuid": "${json-unit.any-string}"
+                  },
+                  "triggerType":"SCHEDULE",
+                  "scheduleLastFiredAt": "${json-unit.any-number}",
+                  "scheduleNextDueAt": "${json-unit.any-number}",
+                  "scheduleCron": "0 * * * *",
+                  "scheduleSkipUnchanged": false,
+                  "uuid": "${json-unit.any-string}"
+                }
+                """);
+    }
+
+    @Test
+    public void createScheduledNotificationRuleWithNonExistentPublisherTest() {
+        final Response response = jersey.target(V1_NOTIFICATION_RULE + "/scheduled")
+                .request()
+                .header(X_API_KEY, apiKey)
+                .put(Entity.json(/* language=JSON */ """
+                        {
+                          "name": "foo",
+                          "scope": "PORTFOLIO",
+                          "notificationLevel": "INFORMATIONAL",
+                          "publisher": {
+                            "uuid": "1228b979-c449-432b-8b56-e00fe69e0d3c"
+                          }
+                        }
+                        """));
+        assertThat(response.getStatus()).isEqualTo(404);
+        assertThatJson(getPlainTextBody(response)).isEqualTo(/* language=JSON */ """
+                {
+                  "status": 404,
+                  "title": "Resource does not exist",
+                  "detail": "Notification publisher could not be found"
+                }
+                """);
+    }
+
+    @Test
     public void updateNotificationRuleTest() {
         NotificationPublisher publisher = qm.getNotificationPublisher(DefaultNotificationPublishers.SLACK.getPublisherName());
         NotificationRule rule = qm.createNotificationRule("Rule 1", NotificationScope.PORTFOLIO, NotificationLevel.INFORMATIONAL, publisher);
@@ -178,7 +253,6 @@ public class NotificationRuleResourceTest extends ResourceTest {
     @Test
     public void updateNotificationRuleWithTagsTest() {
         final NotificationPublisher publisher = qm.getNotificationPublisher(DefaultNotificationPublishers.SLACK.getPublisherName());
-        publisher.setPublishScheduled(true);
         final NotificationRule rule = qm.createNotificationRule("Rule 1", NotificationScope.PORTFOLIO, NotificationLevel.INFORMATIONAL, publisher);
 
         // Tag the rule with "foo" and "bar".
@@ -211,6 +285,7 @@ public class NotificationRuleResourceTest extends ResourceTest {
                           "logSuccessfulPublish": false,
                           "scope": "PORTFOLIO",
                           "notificationLevel": "INFORMATIONAL",
+                          "triggerType": "EVENT",
                           "projects": [],
                           "tags": [
                             {
@@ -228,7 +303,6 @@ public class NotificationRuleResourceTest extends ResourceTest {
                             "publisherClass": "${json-unit.any-string}",
                             "templateMimeType": "${json-unit.any-string}",
                             "defaultPublisher": true,
-                            "publishScheduled": true, 
                             "uuid": "${json-unit.any-string}"
                           },
                           "uuid": "${json-unit.matches:ruleUuid}"
@@ -262,6 +336,7 @@ public class NotificationRuleResourceTest extends ResourceTest {
                           "logSuccessfulPublish": false,
                           "scope": "PORTFOLIO",
                           "notificationLevel": "INFORMATIONAL",
+                          "triggerType": "EVENT",
                           "projects": [],
                           "tags": [
                             {
@@ -276,12 +351,145 @@ public class NotificationRuleResourceTest extends ResourceTest {
                             "publisherClass": "${json-unit.any-string}",
                             "templateMimeType": "${json-unit.any-string}",
                             "defaultPublisher": true,
-                            "publishScheduled": true, 
                             "uuid": "${json-unit.any-string}"
                           },
                           "uuid": "${json-unit.matches:ruleUuid}"
                         }
                         """);
+    }
+
+    @Test
+    public void updateNotificationRuleWithDifferentTriggerTypeTest() {
+        final NotificationPublisher publisher = qm.getNotificationPublisher(
+                DefaultNotificationPublishers.SLACK.getPublisherName());
+        final NotificationRule rule = qm.createNotificationRule(
+                "Rule 1", NotificationScope.PORTFOLIO, NotificationLevel.INFORMATIONAL, publisher);
+
+        final Response response = jersey.target(V1_NOTIFICATION_RULE).request()
+                .header(X_API_KEY, apiKey)
+                .post(Entity.json(/* language=JSON */ """
+                        {
+                          "uuid": "%s",
+                          "name": "Rule 1",
+                          "scope": "PORTFOLIO",
+                          "notificationLevel": "INFORMATIONAL",
+                          "triggerType": "SCHEDULE"
+                        }
+                        """.formatted(rule.getUuid())));
+        assertThat(response.getStatus()).isEqualTo(400);
+        assertThatJson(getPlainTextBody(response)).isEqualTo(/* language=JSON */ """
+                {
+                  "status": 400,
+                  "title": "Illegal argument provided",
+                  "detail": "Trigger type can not be changed"
+                }
+                """);
+    }
+
+    @Test
+    public void updateNotificationRuleWithGroupUnsupportedForScheduleTest() {
+        final NotificationPublisher publisher = qm.getNotificationPublisher(
+                DefaultNotificationPublishers.SLACK.getPublisherName());
+        final NotificationRule rule = qm.createScheduledNotificationRule(
+                "Rule 1", NotificationScope.PORTFOLIO, NotificationLevel.INFORMATIONAL, publisher);
+
+        final Response response = jersey.target(V1_NOTIFICATION_RULE).request()
+                .header(X_API_KEY, apiKey)
+                .post(Entity.json(/* language=JSON */ """
+                        {
+                          "uuid": "%s",
+                          "name": "Rule 1",
+                          "scope": "PORTFOLIO",
+                          "notificationLevel": "INFORMATIONAL",
+                          "notifyOn": ["BOM_PROCESSED", "NEW_VULNERABILITIES_SUMMARY"]
+                        }
+                        """.formatted(rule.getUuid())));
+        assertThat(response.getStatus()).isEqualTo(400);
+        assertThatJson(getPlainTextBody(response)).isEqualTo(/* language=JSON */ """
+                {
+                  "status": 400,
+                  "title": "Illegal argument provided",
+                  "detail": "Groups [BOM_PROCESSED] are not supported for trigger type SCHEDULE"
+                }
+                """);
+    }
+
+    @Test
+    public void updateNotificationRuleWithNewCronExpressionTest() {
+        final NotificationPublisher publisher = qm.getNotificationPublisher(
+                DefaultNotificationPublishers.SLACK.getPublisherName());
+        final NotificationRule rule = qm.createScheduledNotificationRule(
+                "Rule 1", NotificationScope.PORTFOLIO, NotificationLevel.INFORMATIONAL, publisher);
+
+        final Response response = jersey.target(V1_NOTIFICATION_RULE).request()
+                .header(X_API_KEY, apiKey)
+                .post(Entity.json(/* language=JSON */ """
+                        {
+                          "uuid": "%s",
+                          "name": "Rule 1",
+                          "scope": "PORTFOLIO",
+                          "notificationLevel": "INFORMATIONAL",
+                          "notifyOn": ["NEW_VULNERABILITIES_SUMMARY"],
+                          "triggerType": "SCHEDULE",
+                          "scheduleCron": "6 6 6 6 6"
+                        }
+                        """.formatted(rule.getUuid())));
+        assertThat(response.getStatus()).isEqualTo(200);
+        assertThatJson(getPlainTextBody(response))
+                .withMatcher("unmodifiedScheduleLastFiredAt", equalTo(BigDecimal.valueOf(rule.getScheduleLastFiredAt().getTime())))
+                .whenIgnoringPaths("$.publisher")
+                .isEqualTo(/* language=JSON */ """
+                        {
+                          "name":"Rule 1",
+                          "enabled": false,
+                          "notifyChildren": false,
+                          "logSuccessfulPublish": false,
+                          "scope": "PORTFOLIO",
+                          "notificationLevel": "INFORMATIONAL",
+                          "projects": [],
+                          "tags": [],
+                          "teams": [],
+                          "notifyOn": ["NEW_VULNERABILITIES_SUMMARY"],
+                          "triggerType": "SCHEDULE",
+                          "scheduleLastFiredAt": "${json-unit.matches:unmodifiedScheduleLastFiredAt}",
+                          "scheduleNextDueAt": 1749182760000,
+                          "scheduleCron": "6 6 6 6 6",
+                          "uuid": "${json-unit.any-string}"
+                        }
+                        """);
+    }
+
+    @Test
+    public void updateNotificationRuleWithInvalidCronExpressionTest() {
+        final NotificationPublisher publisher = qm.getNotificationPublisher(
+                DefaultNotificationPublishers.SLACK.getPublisherName());
+        final NotificationRule rule = qm.createScheduledNotificationRule(
+                "Rule 1", NotificationScope.PORTFOLIO, NotificationLevel.INFORMATIONAL, publisher);
+
+        final Response response = jersey.target(V1_NOTIFICATION_RULE).request()
+                .header(X_API_KEY, apiKey)
+                .post(Entity.json(/* language=JSON */ """
+                        {
+                          "uuid": "%s",
+                          "name": "Rule 1",
+                          "scope": "PORTFOLIO",
+                          "notificationLevel": "INFORMATIONAL",
+                          "notifyOn": ["NEW_VULNERABILITIES_SUMMARY"],
+                          "triggerType": "SCHEDULE",
+                          "scheduleCron": "not valid at all"
+                        }
+                        """.formatted(rule.getUuid())));
+        assertThat(response.getStatus()).isEqualTo(400);
+        assertThatJson(getPlainTextBody(response)).isEqualTo(/* language=JSON */ """
+                [
+                  {
+                    "message": "The cron expression must be valid",
+                    "messageTemplate": "The cron expression must be valid",
+                    "path": "scheduleCron",
+                    "invalidValue": "not valid at all"
+                  }
+                ]
+                """);
     }
 
     @Test
@@ -524,7 +732,7 @@ public class NotificationRuleResourceTest extends ResourceTest {
                 .withMatcher("publisherUuid", equalTo(publisher.getUuid().toString()))
                 .withMatcher("ruleUuid", equalTo(rule.getUuid().toString()))
                 .withMatcher("teamUuid", equalTo(team.getUuid().toString()))
-                .isEqualTo("""
+                .isEqualTo(/* language=JSON */ """
                         {
                           "name": "Example Rule",
                           "enabled": true,
@@ -532,6 +740,7 @@ public class NotificationRuleResourceTest extends ResourceTest {
                           "logSuccessfulPublish": false,
                           "scope": "PORTFOLIO",
                           "notificationLevel": "INFORMATIONAL",
+                          "triggerType": "EVENT",
                           "projects": [],
                           "tags": [],
                           "teams": [
@@ -548,7 +757,6 @@ public class NotificationRuleResourceTest extends ResourceTest {
                             "publisherClass": "org.dependencytrack.notification.publisher.SendMailPublisher",
                             "templateMimeType": "templateMimeType",
                             "defaultPublisher": false,
-                            "publishScheduled": false,
                             "uuid": "${json-unit.matches:publisherUuid}"
                           },
                           "uuid": "${json-unit.matches:ruleUuid}"

@@ -16,21 +16,21 @@
  * SPDX-License-Identifier: Apache-2.0
  * Copyright (c) OWASP Foundation. All Rights Reserved.
  */
-package org.dependencytrack.util;
+package org.dependencytrack.model;
 
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
+/**
+ * @since 4.13.0
+ */
+public enum NotificationTriggerType {
 
-public class ZonedDateTimeUtil {
-    public static String toISO8601(final ZonedDateTime date) {
-        return date.withZoneSameInstant(ZoneId.of("UTC")).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-    }
+    /**
+     * The notification is triggered ad-hoc through an event emitted by the system.
+     */
+    EVENT,
 
-    public static ZonedDateTime fromISO8601(final String dateString) {
-        if (dateString == null) {
-            return null;
-        }
-        return ZonedDateTime.parse(dateString, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-    }
+    /**
+     * The notification is triggered on schedule.
+     */
+    SCHEDULE
+
 }
